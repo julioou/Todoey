@@ -11,24 +11,23 @@ import CoreData
 
 class TodoListViewController: UITableViewController {
     
+    // Definindo qual sera a lsita carregada com base na categoria.
+    var selectedCategory : Category? {
+        didSet {
+            loadItems()
+        }
+    }
+    
     var itemArray = [Item]()
-    // Localizando e definindo o local de armazenamento de dados.
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+
     // Declarando que o context é uma referência a classe AppDelegate.
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
-        // Definindo estilo da table view.
-        tableView.separatorStyle = .singleLine
-    
-        
-        loadItems()
-        
     }
     
-    //MARK: - Funções atreladas a Table View
+//MARK: - Funções atreladas a Table View
     //Função para definir a quantidade de células
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
@@ -48,7 +47,7 @@ class TodoListViewController: UITableViewController {
         return cell
     }
     
-    //MARK: - Funções para selecionar os itens da lista
+//MARK: - Funções para selecionar os itens da lista
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
@@ -63,7 +62,7 @@ class TodoListViewController: UITableViewController {
         
     }
     
-    //MARK: - Adicionar novos itens para lista
+//MARK: - Adicionar novos itens para lista
     @IBAction func pressedAddButton(_ sender: UIBarButtonItem) {
         
         var textField = UITextField()
@@ -73,6 +72,7 @@ class TodoListViewController: UITableViewController {
             
             let newItem = Item(context: self.context)
             newItem.done = false
+            newItem.parentCategory = self.selectedCategory
             newItem.title = textField.text!
             
             
@@ -94,8 +94,8 @@ class TodoListViewController: UITableViewController {
         
     }
     
-    
 //MARK - Métodos para tratar os dados da lista.
+    
     
     // Função para encodar em um plist os itens do todolist.
     func saveItem(){
@@ -108,10 +108,19 @@ class TodoListViewController: UITableViewController {
         }
         self.tableView.reloadData()
     }
+    
+    
     // Função para não perder os dados a cada vez que iniciar o app.
- 
-    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
-
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {
+        
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        
+        if let addtionalCategory = predicate {
+         request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, addtionalCategory])
+        } else {
+            request.predicate = categoryPredicate
+        }
+        
         do {
             itemArray = try context.fetch(request)
         }
@@ -128,10 +137,30 @@ extension TodoListViewController : UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         let request : NSFetchRequest<Item> = Item.fetchRequest()
         
-        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
         
         request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
         
-        loadItems(with: request)
+        loadItems(with: request, predicate: predicate)
+    }
+    //função para que assim que ocorra mudanças na search bar o sistema responda.
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            loadItems()
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+}
+
+//MARK: - Definindo qual sera a lista carregada
+extension TodoListViewController {
+    func SelectionadoCategorias() {
+        var selectedCategory : Category? {
+            didSet {
+                loadItems()
+            }
+        }
     }
 }
