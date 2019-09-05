@@ -8,20 +8,22 @@
 
 import UIKit
 import RealmSwift
+import SwipeCellKit
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
     
     let realm = try! Realm()
     var categories : Results<Category>?
     
     override func viewDidLoad() {
-        super.viewDidLoad()
         
+        super.viewDidLoad()
         loadItems()
+        tableView.rowHeight = 80.0
+        
     }
     
 //MARK: - Mudando entre listas
-    
     //Função para executar a troca entre as table views
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: "goToItem", sender: self)
@@ -36,7 +38,6 @@ class CategoryViewController: UITableViewController {
     }
     
 //MARK: - TableView Datasource Methods
-    
     //Determinado a quantidade de celular com base na quantidade de itens dentro do categories.
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return categories?.count ?? 1
@@ -44,8 +45,8 @@ class CategoryViewController: UITableViewController {
     
     //Determinado qual sera a célula que vai preencher a table view.
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    
-        let cell = tableView.dequeueReusableCell(withIdentifier: "categoryCell", for: indexPath)
+        
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories added yet."
         
@@ -53,7 +54,6 @@ class CategoryViewController: UITableViewController {
     }
     
 //MARK: - Data Manipulation Methods
-    
     //Função para salvar os dados.
     func saveItem(category: Category){
         //Salvando os dados no CoreData data model.
@@ -75,6 +75,22 @@ class CategoryViewController: UITableViewController {
 
         tableView.reloadData()
     }
+//MARK: - Deleting Data From Realm
+    //Calling fuction from our superclass
+    override func deleteCell(at indexPath: IndexPath) {
+        if let category = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(category)
+                }
+            }
+            catch {
+                print("Error deleting category, \(error)")
+            }
+            
+        }
+    }
+
     
 //MARK: - Add New Categories
     
@@ -107,3 +123,4 @@ class CategoryViewController: UITableViewController {
         present(alertContr, animated: true, completion: nil)
     }
 }
+
