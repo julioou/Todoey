@@ -9,11 +9,13 @@
 import UIKit
 import RealmSwift
 import SwipeCellKit
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
     
     var todoItems: Results<Item>?
     var realm = try! Realm()
+    @IBOutlet var searchBar: UISearchBar!
     
     // Definindo qual sera a lsita carregada com base na categoria.
     var selectedCategory : Category? {
@@ -24,9 +26,19 @@ class TodoListViewController: SwipeTableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        tableView.rowHeight = 80.0
-        
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        //Definindo o título da lista.
+        title = selectedCategory!.name
+        //Inicializando as cores do cabeçalho conforme sua categoria.
+        guard let colourHex = selectedCategory?.colour else {fatalError()}
+        updateBarColour(withHexCode: colourHex)
+    }
+    
+    //Ao voltar para tela de categorias, o cabeçalho devera mudar para sua cor original.
+    override func viewWillDisappear(_ animated: Bool) {
+        updateBarColour(withHexCode: "1D9BF6")
     }
     
     //MARK: - Funções atreladas a Table View
@@ -35,22 +47,35 @@ class TodoListViewController: SwipeTableViewController {
         return todoItems?.count ?? 1
     }
     
+    //Definindo as cores do cabeçalho da lista conforme a sua categoria.
+    //Definindo as cores da barra de pesquisa.
+    func updateBarColour(withHexCode hexColourCode: String) {
+        guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller does not exist.")}
+        navBar.barTintColor = UIColor(hexString: hexColourCode)
+        searchBar.barTintColor = UIColor(hexString: hexColourCode)
+    }
+    
     // Função para modificar as células
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
+        //Chamando a super classe.
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let item = todoItems?[indexPath.row] {
-            
+            //Definindo texto e cor da lista.
             cell.textLabel?.text = item.title
+            cell.textLabel?.textColor = UIColor.white
             
+            //Definido as cores das listas, conforme a cor da sua categoria.
+            if let colour = selectedCategory?.colour {
+                cell.backgroundColor = UIColor(hexString: colour)
+            }
+
             /* Operador ternário, onde, se a propriedade done for true então a cell recebe um checkmark, caso false, ele não recebe nenhum accessoryType. */
             cell.accessoryType = item.done == true ? .checkmark : .none
-            
-        } else {
+        }
+        else {
             cell.textLabel?.text = "No Items Added."
         }
-        
         return cell
     }
     

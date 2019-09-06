@@ -8,11 +8,16 @@
 
 import UIKit
 import SwipeCellKit
+import ChameleonFramework
 
+//I atribute the Swipe class as a UITableVC, because I will can innherite all
+//the methods and atributes it into another class child.
 class SwipeTableViewController: UITableViewController, SwipeTableViewCellDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        tableView.rowHeight = 80.0
         
     }
     
